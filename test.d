@@ -1,11 +1,17 @@
 import std.stdio;
 
-extern(C++) int add(int a, int b);
+extern(C++) struct S
+{
+    int i;
+    this(int i);
+}
+
+extern(C++) S f();
 
 void main()
 {
-    int c = add(1, 2);
-    writeln("test ", c);
+    S s = f();
+    writeln("test ", s);
     stdout.flush();
-    assert(c == 3);
+    assert(s.i == 5);
 }
