@@ -1,5 +1,7 @@
 import std.stdio;
 
+// See https://issues.dlang.org/show_bug.cgi?id=24577
+
 extern(C++) struct S
 {
     int i;
