@@ -139,7 +139,6 @@ int main(string[] args)
             if (cxx.endsWith("cl"))
             {
                 cxxArgs ~= "/c";
-                cxxArgs ~= "/nologo";
             }
             else
             {
@@ -189,7 +188,6 @@ int main(string[] args)
                 dmdArgs ~= "-L-lc++";
             else
                 dmdArgs ~= "-L-lstdc++";
-            dmdArgs ~= "-L--no-demangle";
         }
         dmdArgs ~= "-od" ~ resultDir;
         dmdArgs ~= "-of" ~ executable;
