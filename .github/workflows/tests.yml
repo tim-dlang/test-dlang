@@ -1,0 +1,107 @@
+name: Dlang tests
+
+on: [push, pull_request]
+
+jobs:
+  main:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        platform: [ linux64, win64, win32, osx64, debian32 ]
+        dc: [ dmd-latest, dmd-2.103.1, ldc-latest, dmd-master ]
+
+        exclude:
+          - { platform: win32, dc: ldc-latest }
+          - { platform: debian32, dc: ldc-latest }
+
+        include:
+          - platform: linux64
+            os: ubuntu-22.04
+            model: 64
+
+          - platform: win64
+            os: windows-2022
+            model: 64
+
+          - platform: win32
+            os: windows-2022
+            model: 32mscoff
+
+          - platform: osx64
+            os: macos-12
+            model: 64
+
+          - platform: debian32
+            os: ubuntu-22.04
+            container: debian:11
+            model: 32
+
+          - platform: android_armv7
+            os: ubuntu-22.04
+            model: triple=armv7a--linux-android29
+            dc: ldc-1.38.0
+            ldc_android_arch: armv7a
+            ndk_clang: armv7a-linux-androideabi30-clang
+
+          - platform: android_arm64
+            os: ubuntu-22.04
+            model: triple=aarch64--linux-android29
+            dc: ldc-1.38.0
+            ldc_android_arch: aarch64
+            ndk_clang: aarch64-linux-android30-clang
+
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Debian packages
+        if: ${{ matrix.platform == 'debian32' }}
+        run: |
+          dpkg --add-architecture i386
+          echo "deb http://deb.debian.org/debian bullseye-backports main contrib non-free" >> /etc/apt/sources.list
+          echo "deb-src http://deb.debian.org/debian bullseye-backports main contrib non-free" >> /etc/apt/sources.list
+          apt-get -qq update
+          apt-get -qq install -y gpg xz-utils 7zip
+          apt-get -qq install -y libc6-dev:i386 libstdc++6:i386 g++:i386
+
+      - name: Install D compiler
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ${{ matrix.dc }}
+
+      - name: Change env vars to 32-bit
+        if: ${{ matrix.platform == 'debian32' }}
+        run: |
+          echo "LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | sed "s|dmd2/linux/lib64|dmd2/linux/lib32|g")" >> "$GITHUB_ENV"
+          echo "$(echo "$PATH" | grep -o "[^:]*dmd2/linux/bin[^:]*" | sed "s|dmd2/linux/bin64|dmd2/linux/bin32|g")" >> "$GITHUB_PATH"
+
+      - name: Install Android LDC libraries
+        if: ${{ matrix.ldc_android_arch != '' }}
+        run: |
+          LDC_PATH=/opt/hostedtoolcache/dc/ldc2-1.38.0/x64/ldc2-1.38.0-linux-x86_64
+          wget https://github.com/ldc-developers/ldc/releases/download/v1.38.0/ldc2-1.38.0-android-${{ matrix.ldc_android_arch }}.tar.xz
+          tar xf ldc2-1.38.0-android-${{ matrix.ldc_android_arch }}.tar.xz
+          mv ldc2-1.38.0-android-${{ matrix.ldc_android_arch }}/lib $LDC_PATH/lib-android_${{ matrix.ldc_android_arch }}
+          echo "\"${{ matrix.ldc_android_arch }}-.*-linux-android\":" >> $LDC_PATH/etc/ldc2.conf
+          echo "{" >> $LDC_PATH/etc/ldc2.conf
+          echo "    switches = [" >> $LDC_PATH/etc/ldc2.conf
+          echo "        \"-defaultlib=phobos2-ldc,druntime-ldc\"," >> $LDC_PATH/etc/ldc2.conf
+          echo "        \"-gcc=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.ndk_clang }}\"," >> $LDC_PATH/etc/ldc2.conf
+          echo "    ];" >> $LDC_PATH/etc/ldc2.conf
+          echo "    lib-dirs = [" >> $LDC_PATH/etc/ldc2.conf
+          echo "        \"%%ldcbinarypath%%/../lib-android_${{ matrix.ldc_android_arch }}\"," >> $LDC_PATH/etc/ldc2.conf
+          echo "    ];" >> $LDC_PATH/etc/ldc2.conf
+          echo "};" >> $LDC_PATH/etc/ldc2.conf
+
+      - name: Update PATH
+        if: ${{ matrix.os == 'windows-2022' }}
+        run: |
+          echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: 'Build & Test'
+        timeout-minutes: 5
+        run: |
+          ${{ env.DC }} -run runtests.d --github --compiler=${{ env.DC }} -m${{ matrix.model }}
