@@ -14,6 +14,7 @@ import std.typecons;
 struct Test
 {
     string name;
+    string cppName;
     string[] extraArgs;
     bool buildOnly;
 }
@@ -80,6 +81,7 @@ int main(string[] args)
         static assert("Unknown size of size_t");
 
     string compiler = "dmd";
+    string cxx = "g++";
     bool verbose;
     bool github;
 
@@ -92,6 +94,10 @@ int main(string[] args)
         else if (args[i].startsWith("--compiler="))
         {
             compiler = args[i]["--compiler=".length .. $];
+        }
+        else if (args[i].startsWith("--cxx="))
+        {
+            cxx = args[i]["--cxx=".length .. $];
         }
         else if (args[i] == "-v")
         {
@@ -117,7 +123,7 @@ int main(string[] args)
     }
 
     Test[] tests;
-    tests ~= Test("test.d");
+    tests ~= Test("test.d", "testcpp.cpp");
 
     // Compile and run the tests
     foreach (ref test; tests)
@@ -127,17 +133,64 @@ int main(string[] args)
         string resultDir = buildPath("results", dirName(test.name));
         string executable = buildPath(resultDir, baseName(test.name, ".d") ~ exeExt);
 
+        if (test.cppName.length)
+        {
+            string[] cxxArgs = [cxx];
+            if (cxx.endsWith("cl"))
+            {
+                cxxArgs ~= "/c";
+                cxxArgs ~= "/nologo";
+            }
+            else
+            {
+                cxxArgs ~= "-g";
+                cxxArgs ~= "-Wall";
+                cxxArgs ~= "-c";
+            }
+            cxxArgs ~= test.cppName;
+
+            auto cxxRes = execute(cxxArgs);
+            if (cxxRes.status || verbose)
+            {
+                stderr.writeln(escapeShellCommand(cxxArgs));
+            }
+            if (cxxRes.output.length)
+                stderr.writeln(cxxRes.output.strip());
+            if (cxxRes.status)
+            {
+                sw.stop();
+                stderr.writef("[%d.%03d] ", sw.peek.total!"msecs" / 1000,
+                        sw.peek.total!"msecs" % 1000);
+                stderr.writeln("Failure compiling ", test.name);
+                anyFailure = true;
+                continue;
+            }
+        }
+
         string[] dmdArgs = [compiler];
         string[string] env;
         dmdArgs ~= "-g";
         dmdArgs ~= "-w";
         dmdArgs ~= "-m" ~ model;
         dmdArgs ~= test.name;
-        version (Windows) {}
-        else version (OSX)
-            dmdArgs ~= "-L-lc++";
+        if (test.cppName.length)
+        {
+            version (Windows)
+                dmdArgs ~= baseName(test.cppName, ".cpp") ~ ".obj";
+            else
+                dmdArgs ~= baseName(test.cppName, ".cpp") ~ ".o";
+        }
+        if (compiler.endsWith("gdc"))
+            dmdArgs ~= ["-Xlinker", "-lstdc++", "-Xlinker", "--no-demangle"];
         else
-            dmdArgs ~= "-L-lstdc++";
+        {
+            version (Windows) {}
+            else version (OSX)
+                dmdArgs ~= "-L-lc++";
+            else
+                dmdArgs ~= "-L-lstdc++";
+            dmdArgs ~= "-L--no-demangle";
+        }
         dmdArgs ~= "-od" ~ resultDir;
         dmdArgs ~= "-of" ~ executable;
         dmdArgs ~= test.extraArgs;
