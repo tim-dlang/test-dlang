@@ -211,10 +211,15 @@ int main(string[] args)
         }
 
         string testOutput;
-        bool buildOnly = test.buildOnly || model.canFind("android");
+        bool buildOnly = test.buildOnly;
         if (!buildOnly)
         {
-            string[] testArgs = [absolutePath(executable)];
+            string[] testArgs;
+            if (model.startsWith("triple=aarch64--linux-android"))
+                testArgs ~= ["qemu-aarch64-static", "-L", absolutePath("android-chroot-arm64")];
+            else if (model.startsWith("triple=armv7a--linux-android"))
+                testArgs ~= ["qemu-arm-static", "-L", absolutePath("android-chroot-arm")];
+            testArgs ~= absolutePath(executable);
             auto testRes = executeTimeout(testArgs, 2.minutes, env, resultDir);
             if (testRes.status || verbose)
             {
