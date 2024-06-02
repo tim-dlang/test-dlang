@@ -122,6 +122,9 @@ int main(string[] args)
         SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
     }
 
+    if (model == "32mscoff" && compiler.endsWith("ldc2.exe"))
+        model = "32";
+
     Test[] tests;
     tests ~= Test("test.d", "testcpp.cpp");
 
