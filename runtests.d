@@ -133,7 +133,7 @@ int main(string[] args)
         model = "32";
 
     Test[] tests;
-    tests ~= Test("test.d", "testcpp.cpp");
+    tests ~= Test("test.d");
 
     // Compile and run the tests
     foreach (ref test; tests)
@@ -180,6 +180,7 @@ int main(string[] args)
         string[string] env;
         dmdArgs ~= "-g";
         dmdArgs ~= "-w";
+        dmdArgs ~= "-d";
         dmdArgs ~= "-m" ~ model;
         dmdArgs ~= test.name;
         if (test.cppName.length)

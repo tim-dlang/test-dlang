@@ -9,19 +9,10 @@ jobs:
 
       matrix:
         platform: [ linux64, win64, win32, osx64, debian32 ]
-        dc: [ dmd-latest, dmd-2.100.2, dmd-2.103.1, ldc-latest, dmd-master, gdmd, gdmd-12 ]
+        dc: [ dmd-latest, ldc-latest, dmd-master ]
 
         exclude:
           - { platform: debian32, dc: ldc-latest }
-
-          - { platform: win32, dc: gdmd }
-          - { platform: win32, dc: gdmd-12 }
-          - { platform: win64, dc: gdmd }
-          - { platform: win64, dc: gdmd-12 }
-          - { platform: osx64, dc: gdmd }
-          - { platform: osx64, dc: gdmd-12 }
-          - { platform: debian32, dc: gdmd }
-          - { platform: debian32, dc: gdmd-12 }
 
         include:
           - platform: linux64
@@ -109,7 +100,7 @@ jobs:
         if: ${{ matrix.platform == 'alpine64' }}
         run: |
           apk update
-          apk add ${{ matrix.dc }} gcc g++ musl-dev
+          apk add ${{ matrix.dc }} gcc g++ musl-dev linux-headers
           echo "DC=${{ matrix.dc }}" | sed "s/ldc/ldc2/g" >> "$GITHUB_ENV"
 
       - name: Install D compiler
