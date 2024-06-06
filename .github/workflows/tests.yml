@@ -52,6 +52,20 @@ jobs:
             model: 32
             cxx: g++
 
+          - platform: alpine64
+            os: ubuntu-22.04
+            container: alpine:3.18
+            model: 64
+            cxx: g++
+            dc: dmd
+
+          - platform: alpine64
+            os: ubuntu-22.04
+            container: alpine:3.18
+            model: 64
+            cxx: g++
+            dc: ldc
+
           - platform: android_armv7
             os: ubuntu-24.04
             model: triple=armv7a--linux-android30
@@ -91,7 +105,15 @@ jobs:
           apt-get -qq install -y gpg xz-utils 7zip sudo libxml2
           apt-get -qq install -y libc6-dev:i386 libstdc++6:i386 g++:i386
 
+      - name: Install Alpine packages
+        if: ${{ matrix.platform == 'alpine64' }}
+        run: |
+          apk update
+          apk add ${{ matrix.dc }} gcc g++ musl-dev
+          echo "DC=${{ matrix.dc }}" | sed "s/ldc/ldc2/g" >> "$GITHUB_ENV"
+
       - name: Install D compiler
+        if: ${{ matrix.platform != 'alpine64' }}
         uses: dlang-community/setup-dlang@v2
         with:
           compiler: ${{ matrix.dc }}
