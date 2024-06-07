@@ -37,6 +37,15 @@ auto executeTimeout(string[] args, Duration timeout, const string[string] env = 
     auto pipes = pipeProcess(args, Redirect.stdin | Redirect.stdout | Redirect.stderrToStdout, env, Config.none, workDir);
     pipes.stdin.close();
 
+    Appender!string app;
+    void readOutput()
+    {
+        foreach (ubyte[] chunk; pipes.stdout.byChunk(4096))
+            app.put(chunk);
+    }
+    auto thread = new Thread(&readOutput);
+    thread.start();
+
     auto sw = StopWatch(AutoStart.yes);
     while (true)
     {
@@ -47,9 +56,7 @@ auto executeTimeout(string[] args, Duration timeout, const string[string] env = 
             {
                 kill(pipes.pid);
             }
-            Appender!string app;
-            foreach (ubyte[] chunk; pipes.stdout.byChunk(4096))
-                app.put(chunk);
+            thread.join(false);
             if (!status.terminated)
                 status.status = -1;
             return Tuple!(bool, "terminated", int, "status", string, "output")(status.terminated, status.status, app.data);
