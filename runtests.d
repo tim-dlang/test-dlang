@@ -155,6 +155,8 @@ int main(string[] args)
                 cxxArgs ~= "-g";
                 cxxArgs ~= "-Wall";
                 cxxArgs ~= "-c";
+                //cxxArgs ~= "-m" ~ model;
+                cxxArgs ~= "-std=c++11";
             }
             cxxArgs ~= test.cppName;
 
@@ -182,6 +184,7 @@ int main(string[] args)
         dmdArgs ~= "-w";
         dmdArgs ~= "-m" ~ model;
         dmdArgs ~= test.name;
+        dmdArgs ~= "importc_bitfields.c";
         if (test.cppName.length)
         {
             version (Windows)
