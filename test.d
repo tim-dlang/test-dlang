@@ -18,7 +18,7 @@ int main()
         {
             bool different;
             if (S.sizeof != getStructSize!S
-                && !(S.sizeof == 0 && getStructSize!S == 1)) // Special case, where C and C++ disagree.
+                /*&& !(S.sizeof == 0 && getStructSize!S == 1)*/) // Special case, where C and C++ disagree.
                 different = true;
             if (S.alignof != getStructAlign!S)
                 different = true;
