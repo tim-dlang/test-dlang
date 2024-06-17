@@ -88,3 +88,42 @@ BEGIN_STRUCT(Issue24592d) FIELD(a) FIELD(b) FIELD(c) FIELD(d) FIELD(e) FIELD(f) 
 BEGIN_STRUCT(Issue24613a) FIELD(a) FIELD(b) FIELD(c) FIELD(d) FIELD(e) FIELD(f) END_STRUCT
 BEGIN_STRUCT(Issue24613b) FIELD(a) FIELD(b) FIELD(c) FIELD(d) FIELD(e) FIELD(f) END_STRUCT
 BEGIN_STRUCT(Issue24613c) FIELD(a) FIELD(b) FIELD(c) FIELD(d) FIELD(e) FIELD(f) END_STRUCT
+
+BEGIN_STRUCT(perf_event_mmap_page) FIELD(capabilities)
+FIELD(cap_bit0)
+FIELD(cap_bit0_is_deprecated)
+FIELD(cap_user_rdpmc)
+FIELD(cap_user_time)
+FIELD(cap_user_time_zero)
+FIELD(cap_user_time_short)
+FIELD(cap_____res)
+FIELD(pmc_width)
+END_STRUCT
+
+BEGIN_STRUCT(perf_mem_data_src) FIELD(val)
+FIELD(mem_op)
+FIELD(mem_lvl)
+FIELD(mem_snoop)
+FIELD(mem_lock)
+FIELD(mem_dtlb)
+FIELD(mem_lvl_num)
+FIELD(mem_remote)
+FIELD(mem_snoopx)
+FIELD(mem_blk)
+FIELD(mem_hops)
+FIELD(mem_rsvd)
+END_STRUCT
+
+BEGIN_STRUCT(perf_branch_entry) FIELD(from)
+FIELD(to)
+FIELD(mispred)
+FIELD(predicted)
+FIELD(in_tx)
+FIELD(abort)
+FIELD(cycles)
+FIELD(type)
+FIELD(spec)
+FIELD(new_type)
+FIELD(priv)
+FIELD(reserved)
+END_STRUCT

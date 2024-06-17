@@ -14,7 +14,7 @@ int main()
     static foreach (name; __traits(allMembers, importc_bitfields))
     {{
         alias S = __traits(getMember, importc_bitfields, name);
-        static if (is(S == struct) && name[0] != '_')
+        static if ((is(S == struct) || is(S == union)) && name[0] != '_')
         {
             bool different;
             if (S.sizeof != getStructSize!S

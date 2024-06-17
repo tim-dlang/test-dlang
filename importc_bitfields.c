@@ -53,3 +53,51 @@ struct Issue24592d { unsigned long long a:10, b:16, c:16, d:16, e:16, f:16; };
 struct Issue24613a { unsigned long long a:64, b:64, c:64, d: 64, e: 64, f: 64; };
 struct Issue24613b { unsigned long long a:20, b:64, c:64, d: 64, e: 64, f: 64; };
 struct Issue24613c { unsigned long long a:20, b:63, c:63, d: 63, e: 63, f: 63; };
+
+struct perf_event_mmap_page {
+	union {
+		unsigned long long	capabilities;
+		struct {
+			unsigned long long	cap_bit0		: 1, /* Always 0, deprecated, see commit 860f085b74e9 */
+				cap_bit0_is_deprecated	: 1, /* Always 1, signals that bit 0 is zero */
+
+				cap_user_rdpmc		: 1, /* The RDPMC instruction can be used to read counts */
+				cap_user_time		: 1, /* The time_{shift,mult,offset} fields are used */
+				cap_user_time_zero	: 1, /* The time_zero field is used */
+				cap_user_time_short	: 1, /* the time_{cycle,mask} fields are used */
+				cap_____res		: 58;
+		};
+	};
+
+	unsigned long long	pmc_width;
+};
+union perf_mem_data_src {
+	unsigned long long val;
+	struct {
+		unsigned long long   mem_op:5,	/* type of opcode */
+			mem_lvl:14,	/* memory hierarchy level */
+			mem_snoop:5,	/* snoop mode */
+			mem_lock:2,	/* lock instr */
+			mem_dtlb:7,	/* tlb access */
+			mem_lvl_num:4,	/* memory hierarchy level number */
+			mem_remote:1,   /* remote */
+			mem_snoopx:2,	/* snoop mode, ext */
+			mem_blk:3,	/* access blocked */
+			mem_hops:3,	/* hop level */
+			mem_rsvd:18;
+	};
+};
+struct perf_branch_entry {
+	unsigned long long	from;
+	unsigned long long	to;
+	unsigned long long	mispred:1,  /* target mispredicted */
+		predicted:1,/* target predicted */
+		in_tx:1,    /* in transaction */
+		abort:1,    /* transaction abort */
+		cycles:16,  /* cycle count to last branch */
+		type:4,     /* branch type */
+		spec:2,     /* branch speculation info */
+		new_type:4, /* additional branch type */
+		priv:3,     /* privilege level */
+		reserved:31;
+};
