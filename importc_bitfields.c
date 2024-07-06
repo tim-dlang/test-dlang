@@ -101,3 +101,80 @@ struct perf_branch_entry {
 		priv:3,     /* privilege level */
 		reserved:31;
 };
+
+// https://forum.dlang.org/post/iogtwntudaphilotgdrl@forum.dlang.org
+struct Forum1 {
+     unsigned short x;
+     unsigned int a : 12;
+     unsigned int b : 12;
+     unsigned int c : 8;
+};
+
+struct Random1 {
+unsigned int x1 : 13;
+unsigned int x2 : 21;
+unsigned int x3 : 17;
+unsigned int x4 : 16;
+unsigned int x5 : 31;
+unsigned int x6 : 32;
+unsigned int x7 : 26;
+unsigned int x8 : 12;
+unsigned int x9 : 9;
+unsigned int x10 : 24;
+unsigned int x11 : 19;
+unsigned int x12 : 24;
+unsigned int x13 : 6;
+unsigned int x14 : 32;
+unsigned int x15 : 26;
+unsigned int x16 : 21;
+unsigned int x17 : 26;
+unsigned int x18 : 22;
+unsigned int x19 : 3;
+unsigned int x20 : 10;
+unsigned int x21 : 17;
+unsigned int x22 : 10;
+unsigned int x23 : 4;
+unsigned int x24 : 28;
+unsigned int x25 : 17;
+unsigned int x26 : 18;
+unsigned int x27 : 24;
+unsigned int x28 : 22;
+unsigned int x29 : 22;
+unsigned int x30 : 30;
+unsigned int x31 : 15;
+unsigned int x32 : 3;
+};
+struct Random2 {
+unsigned long long x1 : 18;
+unsigned long long x2 : 31;
+unsigned long long x3 : 18;
+unsigned long long x4 : 49;
+unsigned long long x5 : 30;
+unsigned long long x6 : 11;
+unsigned long long x7 : 60;
+unsigned long long x8 : 38;
+unsigned long long x9 : 2;
+unsigned long long x10 : 14;
+unsigned long long x11 : 61;
+unsigned long long x12 : 7;
+unsigned long long x13 : 13;
+unsigned long long x14 : 54;
+unsigned long long x15 : 28;
+unsigned long long x16 : 7;
+unsigned long long x17 : 43;
+unsigned long long x18 : 62;
+unsigned long long x19 : 48;
+unsigned long long x20 : 28;
+unsigned long long x21 : 7;
+unsigned long long x22 : 52;
+unsigned long long x23 : 55;
+unsigned long long x24 : 56;
+unsigned long long x25 : 5;
+unsigned long long x26 : 46;
+unsigned long long x27 : 45;
+unsigned long long x28 : 58;
+unsigned long long x29 : 12;
+unsigned long long x30 : 27;
+unsigned long long x31 : 28;
+unsigned long long x32 : 29;
+};
