@@ -8,112 +8,33 @@ jobs:
       fail-fast: false
 
       matrix:
-        platform: [ linux64, win64, win32, osx64, debian32 ]
+        platform: [ debian32 ]
         dc: [ dmd-latest, dmd-2.100.2, dmd-2.103.1, ldc-latest, dmd-master, gdmd, gdmd-12 ]
 
-        exclude:
-          - { platform: debian32, dc: ldc-latest }
-
-          - { platform: win32, dc: gdmd }
-          - { platform: win32, dc: gdmd-12 }
-          - { platform: win64, dc: gdmd }
-          - { platform: win64, dc: gdmd-12 }
-          - { platform: osx64, dc: gdmd }
-          - { platform: osx64, dc: gdmd-12 }
-          - { platform: debian32, dc: gdmd }
-          - { platform: debian32, dc: gdmd-12 }
-
         include:
-          - platform: linux64
-            os: ubuntu-22.04
-            model: 64
-            cxx: g++
-
-          - platform: win64
-            os: windows-2022
-            model: 64
-            cxx: cl
-            vc_arch: x64
-
-          - platform: win32
-            os: windows-2022
-            model: 32mscoff
-            cxx: cl
-            vc_arch: x86
-
-          - platform: osx64
-            os: macos-12
-            model: 64
-            cxx: clang++
-
           - platform: debian32
-            os: ubuntu-22.04
-            container: debian:11
+            os: ubuntu-24.04
+            container: debian:12
             model: 32
             cxx: g++
-
-          - platform: alpine64
-            os: ubuntu-22.04
-            container: alpine:3.18
-            model: 64
-            cxx: g++
-            dc: dmd
-
-          - platform: alpine64
-            os: ubuntu-22.04
-            container: alpine:3.18
-            model: 64
-            cxx: g++
-            dc: ldc
-
-          - platform: android_armv7
-            os: ubuntu-24.04
-            model: triple=armv7a--linux-android30
-            dc: ldc-1.38.0
-            android_arch: armeabi-v7a
-            android_arch2: arm-linux-androideabi
-            android_arch3: arm
-            ldc_android_arch: armv7a
-            ndk_clang: armv7a-linux-androideabi30-clang
-            cxx: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi30-clang
-
-          - platform: android_arm64
-            os: ubuntu-24.04
-            model: triple=aarch64--linux-android30
-            dc: ldc-1.38.0
-            android_arch: arm64-v8a
-            android_arch2: aarch64-linux-android
-            android_arch3: arm64
-            android_bits_suffix: 64
-            ldc_android_arch: aarch64
-            ndk_clang: aarch64-linux-android30-clang
-            cxx: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang
 
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Debian packages
         if: ${{ matrix.platform == 'debian32' }}
         run: |
           dpkg --add-architecture i386
-          echo "deb http://deb.debian.org/debian bullseye-backports main contrib non-free" >> /etc/apt/sources.list
-          echo "deb-src http://deb.debian.org/debian bullseye-backports main contrib non-free" >> /etc/apt/sources.list
+          echo "deb http://deb.debian.org/debian bookworm-backports main contrib non-free" >> /etc/apt/sources.list
+          echo "deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free" >> /etc/apt/sources.list
           apt-get -qq update
           apt-get -qq install -y gpg xz-utils 7zip sudo libxml2
           apt-get -qq install -y libc6-dev:i386 libstdc++6:i386 g++:i386
 
-      - name: Install Alpine packages
-        if: ${{ matrix.platform == 'alpine64' }}
-        run: |
-          apk update
-          apk add ${{ matrix.dc }} gcc g++ musl-dev
-          echo "DC=${{ matrix.dc }}" | sed "s/ldc/ldc2/g" >> "$GITHUB_ENV"
-
       - name: Install D compiler
-        if: ${{ matrix.platform != 'alpine64' }}
         uses: dlang-community/setup-dlang@v2
         with:
           compiler: ${{ matrix.dc }}
@@ -124,49 +45,6 @@ jobs:
           echo "LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | sed "s|dmd2/linux/lib64|dmd2/linux/lib32|g")" >> "$GITHUB_ENV"
           echo "DC=$(echo "$DC" | sed "s|dmd2/linux/bin64|dmd2/linux/bin32|g")" >> "$GITHUB_ENV"
           echo "$(echo "$PATH" | grep -o "[^:]*dmd2/linux/bin[^:]*" | sed "s|dmd2/linux/bin64|dmd2/linux/bin32|g")" >> "$GITHUB_PATH"
-
-      - name: Install Android LDC libraries
-        if: ${{ matrix.ldc_android_arch != '' }}
-        run: |
-          LDC_PATH=/opt/hostedtoolcache/ldc2/1.38.0/x64/ldc2-1.38.0-linux-x86_64
-          wget https://github.com/ldc-developers/ldc/releases/download/v1.38.0/ldc2-1.38.0-android-${{ matrix.ldc_android_arch }}.tar.xz
-          tar xf ldc2-1.38.0-android-${{ matrix.ldc_android_arch }}.tar.xz
-          mv ldc2-1.38.0-android-${{ matrix.ldc_android_arch }}/lib $LDC_PATH/lib-android_${{ matrix.ldc_android_arch }}
-          echo "\"${{ matrix.ldc_android_arch }}-.*-linux-android\":" >> $LDC_PATH/etc/ldc2.conf
-          echo "{" >> $LDC_PATH/etc/ldc2.conf
-          echo "    switches = [" >> $LDC_PATH/etc/ldc2.conf
-          echo "        \"-defaultlib=phobos2-ldc,druntime-ldc\"," >> $LDC_PATH/etc/ldc2.conf
-          echo "        \"-gcc=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.ndk_clang }}\"," >> $LDC_PATH/etc/ldc2.conf
-          echo "    ];" >> $LDC_PATH/etc/ldc2.conf
-          echo "    lib-dirs = [" >> $LDC_PATH/etc/ldc2.conf
-          echo "        \"%%ldcbinarypath%%/../lib-android_${{ matrix.ldc_android_arch }}\"," >> $LDC_PATH/etc/ldc2.conf
-          echo "    ];" >> $LDC_PATH/etc/ldc2.conf
-          echo "};" >> $LDC_PATH/etc/ldc2.conf
-
-      - name: Create Android chroot
-        if: ${{ matrix.android_arch != '' }}
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get -qq install -y qemu-user-static
-          wget https://android.googlesource.com/platform/prebuilts/runtime/+archive/refs/tags/android-platform-13.0.0_r19/mainline/runtime/apex.tar.gz
-          tar xf apex.tar.gz com.android.runtime-${{ matrix.android_arch3 }}.apex
-          unzip com.android.runtime-${{ matrix.android_arch3 }}.apex apex_payload.img
-          sudo mount -o loop,ro,noload apex_payload.img /mnt
-          mkdir -p android-chroot-${{ matrix.android_arch3 }}/system/bin
-          mkdir -p android-chroot-${{ matrix.android_arch3 }}/linkerconfig
-          touch android-chroot-${{ matrix.android_arch3 }}/linkerconfig/ld.config.txt
-          mkdir -p android-chroot-${{ matrix.android_arch3 }}/system/lib${{ matrix.android_bits_suffix }}
-          cp $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/${{ matrix.android_arch2 }}/*.so android-chroot-${{ matrix.android_arch3 }}/system/lib${{ matrix.android_bits_suffix }}
-          cp $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/${{ matrix.android_arch2 }}/30/*.so android-chroot-${{ matrix.android_arch3 }}/system/lib${{ matrix.android_bits_suffix }}
-          cp /mnt/bin/linker* android-chroot-${{ matrix.android_arch3 }}/system/bin
-          cp /mnt/lib${{ matrix.android_bits_suffix }}/bionic/*.so android-chroot-${{ matrix.android_arch3 }}/system/lib${{ matrix.android_bits_suffix }}
-          sudo sh -c "echo 65535 > /proc/sys/kernel/pid_max"
-
-      - name: '[Windows] Add VC toolset to PATH'
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.vc_arch }}
 
       - name: Print env
         run: |

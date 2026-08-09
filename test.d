@@ -1,11 +1,29 @@
-import std.stdio;
+extern(C++) interface ValueInterface
+{
+    int value();
+}
 
-extern(C++) int add(int a, int b);
+extern(C++) class PrimaryBase
+{
+    void anchor()
+    {
+    }
+
+    int unused;
+}
+
+extern(C++) class ValueObject : PrimaryBase, ValueInterface
+{
+    final int value()
+    {
+        return 35;
+    }
+}
+
+extern(C) int callValueFromCpp(ValueInterface value);
 
 void main()
 {
-    int c = add(1, 2);
-    writeln("test ", c);
-    stdout.flush();
-    assert(c == 3);
+    ValueInterface value = new ValueObject;
+    assert(callValueFromCpp(value) == 42);
 }

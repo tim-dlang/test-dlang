@@ -152,11 +152,16 @@ int main(string[] args)
             }
             else
             {
+                cxxArgs ~= "-m32";
                 cxxArgs ~= "-g";
                 cxxArgs ~= "-Wall";
-                cxxArgs ~= "-c";
+                cxxArgs ~= "-fPIC";
+                cxxArgs ~= "-O2";
+                cxxArgs ~= "-shared";
             }
             cxxArgs ~= test.cppName;
+            cxxArgs ~= "-o";
+            cxxArgs ~= baseName(test.cppName, ".cpp") ~ ".so";
 
             auto cxxRes = execute(cxxArgs);
             if (cxxRes.status || verbose)
@@ -180,25 +185,25 @@ int main(string[] args)
         string[string] env;
         dmdArgs ~= "-g";
         dmdArgs ~= "-w";
+        dmdArgs ~= "-d";
         dmdArgs ~= "-m" ~ model;
         dmdArgs ~= test.name;
+        if (compiler.endsWith("gdc"))
+            dmdArgs ~= ["-Xlinker", "-lstdc++", "-Xlinker", "--no-demangle"];
+        else
+        {
+            dmdArgs ~= "-L-L.";
+        }
         if (test.cppName.length)
         {
             version (Windows)
                 dmdArgs ~= baseName(test.cppName, ".cpp") ~ ".obj";
             else
-                dmdArgs ~= baseName(test.cppName, ".cpp") ~ ".o";
+                dmdArgs ~= "-L-l" ~ baseName(test.cppName, ".cpp");
         }
-        if (compiler.endsWith("gdc"))
-            dmdArgs ~= ["-Xlinker", "-lstdc++", "-Xlinker", "--no-demangle"];
-        else
-        {
-            version (Windows) {}
-            else version (OSX)
-                dmdArgs ~= "-L-lc++";
-            else
+        dmdArgs ~= "-L-rpath";
+        dmdArgs ~= "-L.";
                 dmdArgs ~= "-L-lstdc++";
-        }
         dmdArgs ~= "-od" ~ resultDir;
         dmdArgs ~= "-of" ~ executable;
         dmdArgs ~= test.extraArgs;
